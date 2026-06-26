@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+  <title>DMMD7 PRONOSTICS - Semaine VIP</title>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root{
+      --bg:#040712;
+      --panel:#0b1120;
+      --panel2:#10192c;
+      --line:#1d2a46;
+      --text:#eef2ff;
+      --muted:#94a3b8;
+      --accent:#00ffcc;
+      --accent2:#ffd24d;
+      --danger:#ff4d6d;
+      --shadow:0 18px 40px rgba(0,0,0,.35);
+      --radius:24px;
+    }
+
+    *{box-sizing:border-box}
+    html{
+      scroll-behavior:smooth;
+    }
+    html,body{
+      margin:0;
+      min-height:100%;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(0,255,204,.10), transparent 30%),
+        radial-gradient(circle at 90% 10%, rgba(255,210,77,.06), transparent 22%),
+        linear-gradient(180deg,#050915 0%, #03050b 100%);
+      color:var(--text);
+      font-family:Inter,Segoe UI,Roboto,sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      touch-action:manipulation;
+      overflow-x:hidden;
+    }
+
+    body{padding:12px}
+    .app{width:min(100%, 720px); margin:0 auto; padding-bottom:42px;}
+
+    .topbar{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      position:sticky; top:0; z-index:1000; padding:10px 0 14px;
+      backdrop-filter:blur(10px);
+      background:rgba(4,7,18,.86);
+      border-bottom:1px solid rgba(255,255,255,.05);
+    }
+    .brand{display:flex; flex-direction:column; gap:2px;}
+    .brand h1{margin:0; font-size:1.08rem; letter-spacing:.16em; color:var(--accent); text-shadow:0 0 18px rgba(0,255,204,.25);}
+    .brand span{font-size:.72rem; color:var(--muted); letter-spacing:.24em; text-transform:uppercase;}
+    .nav-pill{
+      min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:0 14px; border-radius:999px; background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06); box-shadow:var(--shadow); color:var(--text);
+      font-size:.9rem; font-weight:700; cursor:pointer;
+    }
+
+    .hero{
+      background:linear-gradient(180deg, rgba(17,26,45,.95), rgba(8,12,23,.95));
+      border:1px solid rgba(0,255,204,.11);
+      border-radius:28px; padding:22px 18px; box-shadow:var(--shadow);
+    }
+    .hero-title{
+      margin:0; text-align:center; font-size:clamp(2rem, 7vw, 3.2rem);
+      letter-spacing:.14em; color:var(--accent); text-shadow:0 0 18px rgba(0,255,204,.28);
+    }
+    .hero-sub{ text-align:center; margin:10px 0 0; color:var(--muted); font-size:.96rem; }
+
+    .chips{display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:18px;}
+    .chip{
+      min-height:42px; display:inline-flex; align-items:center; justify-content:center;
+      padding:0 14px; border-radius:999px; background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06); color:var(--text); font-size:.9rem; font-weight:700;
+    }
+
+    .promo-zone{
+      margin-top:18px; background:linear-gradient(180deg, rgba(11,17,32,.95), rgba(8,11,20,.98));
+      border:1px solid rgba(0,255,204,.12); border-radius:26px; padding:18px; box-shadow:var(--shadow);
+    }
+    .promo-instruction{ color:var(--text); line-height:1.6; font-size:.98rem; }
+    .promo-code-bold{ color:var(--accent); font-weight:900; letter-spacing:.08em; text-shadow:0 0 10px rgba(0,255,204,.2); }
+
+    .btn{
+      width:100%; min-height:50px; border:none; border-radius:16px; display:inline-flex; align-items:center; justify-content:center;
+      text-decoration:none; font-weight:900; letter-spacing:.02em; margin-top:14px;
+      transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;
+      will-change:transform;
+    }
+    .btn:active{transform:scale(.99)}
+    .btn-bookmaker{background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; box-shadow:0 12px 24px rgba(59,130,246,.18);}
+    .btn-whatsapp{background:linear-gradient(135deg,#25D366,#128C7E); color:#fff; box-shadow:0 12px 24px rgba(37,211,102,.18);}
+    .btn-whatsapp.francais{background:linear-gradient(135deg,#1877F2,#115dc7); box-shadow:0 12px 24px rgba(24,119,242,.18);}
+
+    .subcard{margin-top:18px; border-top:1px dashed rgba(0,255,204,.25); padding-top:18px;}
+    .inline-row{display:flex; gap:10px; align-items:center;}
+    .inline-input{
+      flex:1; min-height:50px; border-radius:16px; border:1px solid var(--line); background:#07101f;
+      color:var(--text); padding:0 14px; outline:none; font-size:1rem;
+    }
+    .inline-input:focus{border-color:rgba(0,255,204,.55); box-shadow:0 0 0 3px rgba(0,255,204,.12);}
+    .inline-btn{
+      min-height:50px; border:none; border-radius:16px; padding:0 16px;
+      background:linear-gradient(135deg,var(--accent),#31d7b8); color:#04111a; font-weight:900; white-space:nowrap;
+      box-shadow:0 12px 24px rgba(0,255,204,.16);
+    }
+    .status{margin-top:12px; min-height:20px; font-size:.92rem; font-weight:700;}
+
+    .card{
+      background:linear-gradient(180deg,var(--panel),var(--panel2));
+      border:1px solid var(--line); border-radius:26px; padding:16px; margin-top:14px; box-shadow:var(--shadow);
+    }
+    .card.premium-card{border:1px solid rgba(0,255,204,.16); box-shadow:0 0 0 1px rgba(0,255,204,.06), var(--shadow);}
+    .card-header{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+    .league{color:#7dd3fc; font-weight:900; text-transform:uppercase; letter-spacing:.08em; font-size:.8rem;}
+    .time{min-height:32px; display:inline-flex; align-items:center; padding:0 10px; border-radius:999px; background:rgba(255,255,255,.05); color:var(--accent2); font-size:.74rem; font-weight:900;}
+    .teams{margin:8px 0 6px; font-size:1.12rem; font-weight:800; line-height:1.35;}
+    .analysis{color:var(--muted); font-size:.92rem; line-height:1.55; margin-bottom:14px;}
+
+    .unlock-box{position:relative; border-radius:18px; overflow:hidden; border:1px solid rgba(255,255,255,.06); background:rgba(0,0,0,.14);}
+    .prono-blur-box{
+      padding:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; filter:blur(8px); min-height:74px;
+    }
+    .odds-blur{background:var(--accent2); color:#04111a; border-radius:999px; padding:6px 10px; font-size:.9rem; font-weight:900; white-space:nowrap;}
+    .lock-overlay{
+      position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+      background:rgba(4,10,20,.68); backdrop-filter:blur(2px); text-align:center;
+    }
+    .lock-text{color:var(--accent2); font-size:.78rem; font-weight:900; letter-spacing:.09em; text-transform:uppercase;}
+
+    .unlock-zone{display:flex; gap:10px; margin-top:14px;}
+    .unlock-zone input{
+      flex:1; min-height:50px; border-radius:16px; border:1px solid var(--line); background:#07101f; color:var(--text); padding:0 14px; outline:none; font-size:1rem;
+    }
+    .unlock-zone button{min-height:50px; border:none; border-radius:16px; padding:0 16px; background:linear-gradient(135deg,var(--accent),#31d7b8); color:#04111a; font-weight:900;}
+
+    .section-title{margin:20px 6px 12px; color:#ffd86b; font-size:.95rem; font-weight:900; text-transform:uppercase; letter-spacing:.12em;}
+    .footer{margin-top:22px; text-align:center; color:#64748b; font-size:.8rem; padding:14px 0 4px;}
+
+    .modal{
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:99999; align-items:center; justify-content:center; padding:18px;
+    }
+    .modal-card{
+      width:min(100%, 420px); background:#fff; color:#000; border-radius:18px; padding:28px 22px; text-align:center; box-shadow:0 16px 40px rgba(0,0,0,.45);
+    }
+    .modal-card h3{margin:0 0 14px; color:#444; font-size:1.05rem; border-bottom:1px solid #eee; padding-bottom:10px;}
+    .modal-card p{color:#d32f2f; font-weight:800; line-height:1.5; margin:18px 0 22px;}
+    .modal-card button{min-height:46px; border:none; border-radius:12px; padding:0 24px; background:#00bcd4; color:#fff; font-weight:800; font-size:1rem;}
+
+    .fab-top{
+      position:fixed;
+      right:16px;
+      bottom:16px;
+      width:48px;
+      height:48px;
+      border:none;
+      border-radius:999px;
+      background:linear-gradient(135deg,#00ffcc,#31d7b8);
+      color:#04111a;
+      font-size:1.1rem;
+      font-weight:900;
+      box-shadow:0 12px 24px rgba(0,255,204,.2);
+      z-index:2000;
+    }
+
+    @media (min-width:760px){ body{padding:18px} .hero{padding:28px} .promo-zone{padding:22px} .card{padding:18px} }
+  </style>
+</head>
+<body>
+  <div id="custom-alert" class="modal">
+    <div class="modal-card">
+      <h3>housseini1960.github.io</h3>
+      <p>❌ Ce code unique a déjà été validé sur un autre smartphone !</p>
+      <button onclick="document.getElementById('custom-alert').style.display='none'">OK</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <h1>DMMD7 PRONOSTICS</h1>
+        <span>SEMAINE VIP</span>
+      </div>
+      <div class="nav-pill">🏠 Home</div>
+    </div>
+
+    <div class="hero">
+      <h2 class="hero-title">DMMD7 PRONOSTICS</h2>
+      <p class="hero-sub" id="user-location">Détection de la zone VIP...</p>
+
+      <div class="chips">
+        <div class="chip">Mobile First</div>
+        <div class="chip">Neon FX</div>
+        <div class="chip">Stable Calc</div>
+      </div>
+    </div>
+
+    <div class="promo-zone">
+      <div class="promo-instruction">
+        Pour débloquer les coupons de la semaine, suis ces deux étapes obligatoires :<br><br>
+        <strong>Étape 1 :</strong> Crée ton compte chez le bookmaker avec le code promo :
+        <span class="promo-code-bold">DMMD7</span> et fais ton dépôt.
+      </div>
+
+      <a href="https://1xbet.com" target="_blank" class="btn btn-bookmaker">📱 S'inscrire sur le Bookmaker</a>
+
+      <div class="promo-instruction" style="margin-top:18px;">
+        <strong>Étape 2 :</strong> Envoie ta <strong>capture d'écran</strong> sur WhatsApp pour obtenir ton mot de passe d'accès unique.
+      </div>
+
+      <a href="whatsapp://send?phone=22774126709&text=Salut%20Housseini,%20voici%20ma%20preuve%20DMMD7" class="btn btn-whatsapp">💬 Envoyer à Djabson7 adjoint_@</a>
+      <a href="whatsapp://send?phone=22797848267&text=Salut%20Français,%20voici%20ma%20preuve%20DMMD7" class="btn btn-whatsapp francais">💬 Envoyer à Djabson_7@</a>
+
+      <div style="text-align:center; margin:18px auto 0; padding:18px; background:rgba(0,255,204,.05); border:1px dashed rgba(0,255,204,.35); border-radius:18px;">
+        <p style="margin:0 0 14px; font-size:.98rem; line-height:1.5; font-weight:700;">
+          🔥 Rejoignez notre communauté sur Facebook pour ne rater aucun pronostic gratuit et suivre nos pronostics en temps réel !
+        </p>
+        <a href="https://www.facebook.com/share/18PYS4DSFL/?mibextid=wwXIfr" target="_blank" class="btn" style="background:#1877F2; color:#fff; box-shadow:0 12px 24px rgba(24,119,242,.18);">🔵 Suivez-nous sur Facebook</a>
+      </div>
+
+      <div class="subcard">
+        <div class="promo-instruction" style="font-size:.95rem; margin-bottom:10px;">
+          <strong>Vérification de ton inscription :</strong>
+        </div>
+
+        <div class="inline-row">
+          <input type="text" id="user-id-input" class="inline-input" placeholder="Entre ton ID Bookmaker...">
+          <button class="inline-btn" onclick="verifyUserRegistration()">Vérifier</button>
+        </div>
+
+        <div id="verification-status" class="status"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Calendrier des Tickets VIP</div>
+
+    <div class="card">
+      <div class="card-header"><span class="league">⚽ PREMIER LEAGUE</span><span class="time">LUNDI</span></div>
+      <div class="teams">Manchester United 🆚 Everton</div>
+      <div class="analysis">Analyse statistique poussée sur la victoire à domicile.</div>
+      <div class="unlock-box">
+        <div class="prono-blur-box" id="p1"><span>Pronostic : <span id="txt1">XXXXX XXXXXXX</span></span><span class="odds-blur">Cote : 1.55</span></div>
+        <div class="lock-overlay" id="l1"><div>🔒</div><div class="lock-text">Préservé VIP DMMD7</div></div>
+      </div>
+      <div class="unlock-zone" id="inputZone1"><input type="text" id="key1" placeholder="Code secret Lundi..."><button onclick="checkSecureMatchCode(1)">Débloquer</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="league">⚽ LIGUE DES CHAMPIONS</span><span class="time">MARDI</span></div>
+      <div class="teams">Bayern Munich 🆚 Real Madrid</div>
+      <div class="analysis">Choc offensif majeur. Statistiques de buts par match très élevées.</div>
+      <div class="unlock-box">
+        <div class="prono-blur-box" id="p2"><span>Pronostic : <span id="txt2">XXXXXXX XXXXX</span></span><span class="odds-blur">Cote : 1.68</span></div>
+        <div class="lock-overlay" id="l2"><div>🔒</div><div class="lock-text">Préservé VIP DMMD7</div></div>
+      </div>
+      <div class="unlock-zone" id="inputZone2"><input type="text" id="key2" placeholder="Code secret Mardi..."><button onclick="checkSecureMatchCode(2)">Débloquer</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="league">⚽ LIGUE DES CHAMPIONS</span><span class="time">MERCREDI</span></div>
+      <div class="teams">Paris SG 🆚 Arsenal</div>
+      <div class="analysis">Analyse tactique sur le vainqueur de ce duel au sommet.</div>
+      <div class="unlock-box">
+        <div class="prono-blur-box" id="p3"><span>Pronostic : <span id="txt3">XXXXXXXX XXXXXX</span></span><span class="odds-blur">Cote : 1.95</span></div>
+        <div class="lock-overlay" id="l3"><div>🔒</div><div class="lock-text">Préservé VIP DMMD7</div></div>
+      </div>
+      <div class="unlock-zone" id="inputZone3"><input type="text" id="key3" placeholder="Code secret Mercredi..."><button onclick="checkSecureMatchCode(3)">Débloquer</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="league">⚽ EUROPA LEAGUE</span><span class="time">JEUDI</span></div>
+      <div class="teams">AS Roma 🆚 Ajax Amsterdam</div>
+      <div class="analysis">Analyse axée sur l'historique des confrontations.</div>
+      <div class="unlock-box">
+        <div class="prono-blur-box" id="p4"><span>Pronostic : <span id="txt4">XXXXX XXXXXXX XXXXXXX</span></span><span class="odds-blur">Cote : 1.72</span></div>
+        <div class="lock-overlay" id="l4"><div>🔒</div><div class="lock-text">Préservé VIP DMMD7</div></div>
+      </div>
+      <div class="unlock-zone" id="inputZone4"><input type="text" id="key4" placeholder="Code secret Jeudi..."><button onclick="checkSecureMatchCode(4)">Débloquer</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="league">⚽ LIGUE 1</span><span class="time">VENDREDI</span></div>
+      <div class="teams">Marseille 🆚 Lyon</div>
+      <div class="analysis">Gros Olympico de fin de semaine.</div>
+      <div class="unlock-box">
+        <div class="prono-blur-box" id="p5"><span>Pronostic : <span id="txt5">XXXXXXX XXXXXX X XXXXX</span></span><span class="odds-blur">Cote : 1.60</span></div>
+        <div class="lock-overlay" id="l5"><div>🔒</div><div class="lock-text">Préservé VIP DMMD7</div></div>
+      </div>
+      <div class="unlock-zone" id="inputZone5"><input type="text" id="key5" placeholder="Code secret Vendredi..."><button onclick="checkSecureMatchCode(5)">Débloquer</button></div>
+    </div>
+
+    <div class="section-title">Tickets Scores Exacts</div>
+
+    <div class="card premium-card">
+      <div class="card-header"><span class="league">🏆 PREMIER LEAGUE</span><span class="time">ULTRA VIP 🔥</span></div>
+      <div class="teams">Manchester City 🆚 Chelsea</div>
+      <div class="analysis">Analyse ultra-précise basée sur la domination à domicile.</div>
+      <div class="unlock-box">
+        <div class="prono-blur-box" id="p6"><span>Score Exact : <span id="txt6">X - X</span></span><span class="odds-blur">Cote : 7.50</span></div>
+        <div class="lock-overlay" id="l6"><div>🔒</div><div class="lock-text">SCORE EXACT VIP</div></div>
+      </div>
+      <div class="unlock-zone" id="inputZone6"><input type="text" id="key6" placeholder="Code Score 1..."><button onclick="checkSecureMatchCode(6)">Débloquer</button></div>
+    </div>
+
+    <div class="card premium-card">
+      <div class="card-header"><span class="league">🏆 LALIGA</span><span class="time">ULTRA VIP 🔥</span></div>
+      <div class="teams">Real Madrid 🆚 Atletico Madrid</div>
+      <div class="analysis">Derby madrilène très serré sous haute tension tactique.</div>
+      <div class="unlock-box">
+        <div class="prono-blur-box" id="p7"><span>Score Exact : <span id="txt7">X - X</span></span><span class="odds-blur">Cote : 6.20</span></div>
+        <div class="lock-overlay" id="l7"><div>🔒</div><div class="lock-text">SCORE EXACT VIP</div></div>
+      </div>
+      <div class="unlock-zone" id="inputZone7"><input type="text" id="key7" placeholder="Code Score 2..."><button onclick="checkSecureMatchCode(7)">Débloquer</button></div>
+    </div>
+
+    <div class="card premium-card">
+      <div class="card-header"><span class="league">🏆 SERIE A</span><span class="time">ULTRA VIP 🔥</span></div>
+      <div class="teams">Inter Milan 🆚 Juventus</div>
+      <div class="analysis">Choc au sommet de la Serie A.</div>
+      <div class="unlock-box">
+        <div class="prono-blur-box" id="p8"><span>Score Exact : <span id="txt8">X - X</span></span><span class="odds-blur">Cote : 8.00</span></div>
+        <div class="lock-overlay" id="l8"><div>🔒</div><div class="lock-text">SCORE EXACT VIP</div></div>
+      </div>
+      <div class="unlock-zone" id="inputZone8"><input type="text" id="key8" placeholder="Code Score 3..."><button onclick="checkSecureMatchCode(8)">Débloquer</button></div>
+    </div>
+
+    <div class="section-title">Bilan des Gains</div>
+    <div class="card" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div style="background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px; text-align:center;">
+        <div style="color:var(--muted); font-size:.78rem; text-transform:uppercase;">Réussite Semaine</div>
+        <div style="color:var(--accent); font-size:1.6rem; font-weight:900; margin-top:8px;">88.9%</div>
+      </div>
+      <div style="background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px; text-align:center;">
+        <div style="color:var(--muted); font-size:.78rem; text-transform:uppercase;">Statut VIP</div>
+        <div style="color:var(--accent); font-size:1.35rem; font-weight:900; margin-top:8px;">ACTIF ✅</div>
+      </div>
+    </div>
+
+    <div class="footer">© 2026 DMMD7 PRONOSTICS - Programme Hebdomadaire</div>
+  </div>
+
+  <button class="fab-top" onclick="window.scrollTo({top:0, behavior:'smooth'})">↑</button>
+
+  <script>
+    const secureDatabase = {
+      1:"Victoire Man. United",
+      2:"Plus de 2.5 buts",
+      3:"Victoire Paris SG",
+      4:"Les 2 équipes marquent",
+      5:"Marseille ou Nul & +1.5 buts",
+      6:"Score Exact : 3 - 1",
+      7:"Score Exact : 1 - 0",
+      8:"Score Exact : 2 - 0"
+    };
+
+    const SECURE_VIP_CODES = ["housseini1960-k2m7x","housseini1960-p8v3l","housseini1960-w4m9b","housseini1960-j9z4t","housseini1960-q1n6f","housseini1960-h5k2r","housseini1960-c8m4w","housseini1960-p7x1v","housseini1960-g6n3q","housseini1960-t9z2j","housseini1960-k4m8x","housseini1960-p2v6l","housseini1960-w1m7b","housseini1960-j5z9t","housseini1960-q8n4f","housseini1960-a3r7k","housseini1960-d9w2m","housseini1960-l8p4v","housseini1960-f5n3q","housseini1960-t1z8j","housseini1960-k6m2x","housseini1960-p9v4l","housseini1960-w8m3b","housseini1960-j2z7t","housseini1960-q5n1f","housseini1960-h9k4r","housseini1960-c1m6w","housseini1960-p8x3v","housseini1960-g5n2q","housseini1960-t4z7j","housseini1960-k1m9x","housseini1960-p5v2l","housseini1960-w7m4b","housseini1960-j8z3t","housseini1960-q2n9f","housseini1960-a7r1k","housseini1960-d4w8m","housseini1960-l2p6v","housseini1960-f9n5q","housseini1960-t3z1j","housseini1960-k8m4x","housseini1960-p1v7l","housseini1960-w2m9b","housseini1960-j6z4t","housseini1960-q3n8f","housseini1960-r4v9z","housseini1960-m2t7x","housseini1960-p8s3l","housseini1960-k9w4b","housseini1960-j7z2t"];
+
+    const firebaseConfig = {
+      apiKey:"AIzaSyD9-SEXnyLYqEjATFelwLNhq5Le5QGOX0o",
+      authDomain:"vip-pronos-officiel.firebaseapp.com",
+      databaseURL:"https://vip-pronos-officiel-default-rtdb.firebaseio.com",
+      projectId:"vip-pronos-officiel",
+      storageBucket:"vip-pronos-officiel.firebasestorage.app",
+      messagingSenderId:"379518140231",
+      appId:"1:379518140231:web:cfc0194df6d4f7609e5662"
+    };
+
+    if (typeof firebase !== "undefined" && firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
+    window.database = typeof firebase !== "undefined" ? firebase.database() : null;
+
+    function generateDeviceFingerprint() {
+      try {
+        const raw = [navigator.userAgent, navigator.language, screen.width + "x" + screen.height, Intl.DateTimeFormat().resolvedOptions().timeZone || ""].join("||");
+        let hash = 0;
+        for (let i = 0; i < raw.length; i++) { hash = ((hash << 5) - hash) + raw.charCodeAt(i); hash |= 0; }
+        return "VIP-DEVICE-" + Math.abs(hash);
+      } catch (e) {
+        return "VIP-DEVICE-GENERIC";
+      }
+    }
+
+    function applySpecificUnlock(matchNum) {
+      const txt = document.getElementById("txt" + matchNum);
+      const p = document.getElementById("p" + matchNum);
+      const l = document.getElementById("l" + matchNum);
+      const inputZone = document.getElementById("inputZone" + matchNum);
+      if (txt) txt.innerText = secureDatabase[matchNum];
+      if (p) p.style.filter = "none";
+      if (l) l.style.display = "none";
+      if (inputZone) inputZone.style.display = "none";
+      localStorage.setItem("match_active_" + matchNum, "true");
+    }
+
+    function applyLockAll() {
+      for (let i = 1; i <= 8; i++) {
+        const p = document.getElementById("p" + i);
+        const l = document.getElementById("l" + i);
+        const inputZone = document.getElementById("inputZone" + i);
+        const txt = document.getElementById("txt" + i);
+        if (p) p.style.filter = "blur(8px)";
+        if (l) l.style.display = "flex";
+        if (inputZone) inputZone.style.display = "flex";
+        if (txt) txt.innerText = i <= 5 ? "XXXXX XXXXX" : "X - X";
+      }
+    }
+
+    async function bindCodeToDevice(code, deviceId) {
+      const ref = window.database.ref("codes/" + code);
+      const snap = await ref.once("value");
+      const current = snap.val();
+      if (!current) { await ref.set(deviceId); return true; }
+      if (current === deviceId) return true;
+      return false;
+    }
+
+    async function checkSecureMatchCode(matchNum) {
+      try {
+        const db = window.database;
+        if (!db) { alert("❌ Le système de sécurité Firebase n'est pas encore chargé."); return; }
+
+        const inputField = document.getElementById("key" + matchNum);
+        if (!inputField) return;
+
+        const userInput = inputField.value.trim();
+        if (!userInput) { alert("Veuillez saisir un code."); return; }
+
+        if (userInput === "hackot123") {
+          localStorage.clear();
+          applyLockAll();
+          alert("🛠️ Mode Admin : tout a été verrouillé / réinitialisé !");
+          window.location.reload();
+          return;
+        }
+
+        if (userInput === "hackot2007") {
+          applySpecificUnlock(matchNum);
+          alert("👑 Accès Maître activé ! Ce ticket est débloqué.");
+          return;
+        }
+
+        const deviceId = generateDeviceFingerprint();
+        const promoRef = db.ref("codes_promos/" + userInput);
+        const promoSnap = await promoRef.once("value");
+
+        if (promoSnap.exists()) {
+          const data = promoSnap.val();
+          if (data && typeof data === "object" && data.deviceId) {
+            if (data.deviceId === deviceId) {
+              applySpecificUnlock(matchNum);
+              alert("✅ Code reconnu sur ce téléphone. Ce ticket est activé.");
+            } else {
+              document.getElementById("custom-alert").style.display = "flex";
+            }
+            return;
+          }
+          if (data === false) {
+            await promoRef.set({ deviceId: deviceId, used: true });
+            applySpecificUnlock(matchNum);
+            alert("✅ Félicitations ! Ce ticket VIP est activé sur ce téléphone.");
+            return;
+          }
+          document.getElementById("custom-alert").style.display = "flex";
+          return;
+        }
+
+        if (!SECURE_VIP_CODES.includes(userInput)) {
+          alert("❌ Ce code d'accès n'existe pas ou est falsifié !");
+          return;
+        }
+
+        const allowed = await bindCodeToDevice(userInput, deviceId);
+        if (!allowed) {
+          document.getElementById("custom-alert").style.display = "flex";
+          return;
+        }
+
+        applySpecificUnlock(matchNum);
+        alert("✅ Félicitations ! Ce ticket est maintenant activé sur ce téléphone.");
+      } catch (error) {
+        alert("⚠️ Erreur : " + error.message);
+      }
+    }
+
+    function verifyUserRegistration() {
+      const idInput = document.getElementById("user-id-input");
+      const statusDiv = document.getElementById("verification-status");
+      if (!idInput || !statusDiv) return;
+
+      const idValue = idInput.value.trim();
+      if (!idValue) {
+        statusDiv.style.color = "var(--danger)";
+        statusDiv.innerText = "⚠️ Erreur : ID invalide.";
+        return;
+      }
+
+      statusDiv.style.color = "#ffcc00";
+      statusDiv.innerText = "🔍 Recherche de l'ID...";
+      setTimeout(() => {
+        statusDiv.style.color = "var(--accent)";
+        statusDiv.innerHTML = "✅ ID enregistré avec succès !";
+      }, 1800);
+    }
+
+    async function detectCountry() {
+      const statusLabel = document.getElementById("user-location");
+
+      if (!navigator.geolocation) {
+        statusLabel.innerText = "🌍 Géolocalisation non supportée";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          try {
+            const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2`;
+            const response = await fetch(url, {
+              headers: {
+                "Accept": "application/json"
+              }
+            });
+
+            if (!response.ok) {
+              throw new Error("Erreur géocodage");
+            }
+
+            const data = await response.json();
+            const country = data?.address?.country || "Pays inconnu";
+            const countryCode = (data?.address?.country_code || "").toUpperCase();
+
+            statusLabel.innerText = countryCode
+              ? `🌍 ZONE VIP ACTIVÉE : ${country.toUpperCase()} (${countryCode})`
+              : `🌍 ZONE VIP ACTIVÉE : ${country.toUpperCase()}`;
+          } catch (err) {
+            statusLabel.innerText = "🌍 Impossible de déterminer le pays";
+          }
+        },
+        () => {
+          statusLabel.innerText = "🌍 Localisation refusée ou indisponible";
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      for (let i = 1; i <= 8; i++) {
+        if (localStorage.getItem("match_active_" + i) === "true") applySpecificUnlock(i);
+        else {
+          const p = document.getElementById("p" + i);
+          const l = document.getElementById("l" + i);
+          const inputZone = document.getElementById("inputZone" + i);
+          if (p) p.style.filter = "blur(8px)";
+          if (l) l.style.display = "flex";
+          if (inputZone) inputZone.style.display = "flex";
+        }
+      }
+
+      detectCountry();
+    });
+  </script>
+</body>
+  </html>
