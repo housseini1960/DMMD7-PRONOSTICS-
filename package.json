@@ -1,0 +1,14 @@
+{
+  "name": "prono-telegram-bot",
+  "version": "1.0.0",
+  "description": "Bot pour modifier GitHub",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0",
+    "@octokit/rest": "^20.1.1"
+  }
+}
+
